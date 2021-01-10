@@ -34,11 +34,11 @@ import org.apache.spark.sql.catalyst.expressions.Cast
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.joins.BroadcastNestedLoopJoinExec
-import org.apache.spark.sql.hive._
 import org.apache.spark.sql.hive.test.{HiveTestJars, TestHive}
 import org.apache.spark.sql.hive.test.TestHive._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.test.SQLTestUtils
+import org.apache.spark.tags.SlowHiveTest
 
 case class TestData(a: Int, b: String)
 
@@ -46,6 +46,7 @@ case class TestData(a: Int, b: String)
  * A set of test cases expressed in Hive QL that are not covered by the tests
  * included in the hive distribution.
  */
+@SlowHiveTest
 class HiveQuerySuite extends HiveComparisonTest with SQLTestUtils with BeforeAndAfter {
   import org.apache.spark.sql.hive.test.TestHive.implicits._
 
@@ -564,12 +565,18 @@ class HiveQuerySuite extends HiveComparisonTest with SQLTestUtils with BeforeAnd
     assert(-1 == res.get(0))
   }
 
-  test("timestamp cast #3") {
+  createQueryTest("timestamp cast #3",
+    "SELECT CAST(TIMESTAMP_SECONDS(1.2) AS DOUBLE) FROM src LIMIT 1")
+
+  createQueryTest("timestamp cast #4",
+    "SELECT CAST(TIMESTAMP_SECONDS(-1.2) AS DOUBLE) FROM src LIMIT 1")
+
+  test("timestamp cast #5") {
     val res = sql("SELECT CAST(TIMESTAMP_SECONDS(1200) AS INT) FROM src LIMIT 1").collect().head
     assert(1200 == res.getInt(0))
   }
 
-  test("timestamp cast #4") {
+  test("timestamp cast #6") {
     val res = sql("SELECT CAST(TIMESTAMP_SECONDS(-1200) AS INT) FROM src LIMIT 1").collect().head
     assert(-1200 == res.getInt(0))
   }
@@ -1210,6 +1217,23 @@ class HiveQuerySuite extends HiveComparisonTest with SQLTestUtils with BeforeAnd
       assertResult(Array(Row(2.4999991485811655))) {
         sql("select radians(143.2394) FROM src tablesample (1 rows)").collect()
       }
+    }
+  }
+
+  test("SPARK-33084: Add jar support Ivy URI in SQL") {
+    val testData = TestHive.getHiveFile("data/files/sample.json").toURI
+    withTable("t") {
+      sql("ADD JAR ivy://org.apache.hive.hcatalog:hive-hcatalog-core:2.3.7")
+      sql(
+        """CREATE TABLE t(a string, b string)
+          |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'""".stripMargin)
+      sql(s"""LOAD DATA LOCAL INPATH "$testData" INTO TABLE t""")
+      sql("SELECT * FROM src JOIN t on src.key = t.a")
+      assert(sql("LIST JARS").filter(_.getString(0).contains(
+        "org.apache.hive.hcatalog_hive-hcatalog-core-2.3.7.jar")).count() > 0)
+      assert(sql("LIST JAR").
+        filter(_.getString(0).contains(
+          "org.apache.hive.hcatalog_hive-hcatalog-core-2.3.7.jar")).count() > 0)
     }
   }
 }

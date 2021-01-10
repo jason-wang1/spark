@@ -75,6 +75,7 @@ class StreamingQueryStatusAndProgressSuite extends StreamTest with Eventually {
         |    "description" : "source",
         |    "startOffset" : 123,
         |    "endOffset" : 456,
+        |    "latestOffset" : 789,
         |    "numInputRows" : 678,
         |    "inputRowsPerSecond" : 10.0
         |  } ],
@@ -121,6 +122,7 @@ class StreamingQueryStatusAndProgressSuite extends StreamTest with Eventually {
          |    "description" : "source",
          |    "startOffset" : 123,
          |    "endOffset" : 456,
+         |    "latestOffset" : 789,
          |    "numInputRows" : 678
          |  } ],
          |  "sink" : {
@@ -316,7 +318,7 @@ object StreamingQueryStatusAndProgressSuite {
     timestamp = "2016-12-05T20:54:20.827Z",
     batchId = 2L,
     batchDuration = 0L,
-    durationMs = new java.util.HashMap(Map("total" -> 0L).mapValues(long2Long).asJava),
+    durationMs = new java.util.HashMap(Map("total" -> 0L).mapValues(long2Long).toMap.asJava),
     eventTime = new java.util.HashMap(Map(
       "max" -> "2016-12-05T20:54:20.827Z",
       "min" -> "2016-12-05T20:54:20.827Z",
@@ -326,13 +328,14 @@ object StreamingQueryStatusAndProgressSuite {
       numRowsTotal = 0, numRowsUpdated = 1, memoryUsedBytes = 3, numRowsDroppedByWatermark = 0,
       customMetrics = new java.util.HashMap(Map("stateOnCurrentVersionSizeBytes" -> 2L,
         "loadedMapCacheHitCount" -> 1L, "loadedMapCacheMissCount" -> 0L)
-        .mapValues(long2Long).asJava)
+        .mapValues(long2Long).toMap.asJava)
     )),
     sources = Array(
       new SourceProgress(
         description = "source",
         startOffset = "123",
         endOffset = "456",
+        latestOffset = "789",
         numInputRows = 678,
         inputRowsPerSecond = 10.0,
         processedRowsPerSecond = Double.PositiveInfinity  // should not be present in the json
@@ -351,7 +354,7 @@ object StreamingQueryStatusAndProgressSuite {
     timestamp = "2016-12-05T20:54:20.827Z",
     batchId = 2L,
     batchDuration = 0L,
-    durationMs = new java.util.HashMap(Map("total" -> 0L).mapValues(long2Long).asJava),
+    durationMs = new java.util.HashMap(Map("total" -> 0L).mapValues(long2Long).toMap.asJava),
     // empty maps should be handled correctly
     eventTime = new java.util.HashMap(Map.empty[String, String].asJava),
     stateOperators = Array(new StateOperatorProgress(
@@ -361,6 +364,7 @@ object StreamingQueryStatusAndProgressSuite {
         description = "source",
         startOffset = "123",
         endOffset = "456",
+        latestOffset = "789",
         numInputRows = 678,
         inputRowsPerSecond = Double.NaN, // should not be present in the json
         processedRowsPerSecond = Double.NegativeInfinity // should not be present in the json
